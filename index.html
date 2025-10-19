@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Assistant - Groq</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #252526;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #569cd6;
+        }
+
+        .language-select {
+            padding: 0.5rem;
+            background: #3c3c3c;
+            color: #d4d4d4;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .api-key-section {
+            background: #264f78;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #1a3a52;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .api-key-section input {
+            flex: 1;
+            padding: 0.5rem;
+            background: #3c3c3c;
+            color: #d4d4d4;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .api-key-section button {
+            padding: 0.5rem 1rem;
+            background: #0e639c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .api-key-section button:hover {
+            background: #1177bb;
+        }
+
+        .quick-actions {
+            background: #2d2d30;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            padding: 0.4rem 0.8rem;
+            background: #3c3c3c;
+            color: #d4d4d4;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: #505050;
+            border-color: #0e639c;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            max-width: 900px;
+        }
+
+        .message.user {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #0e639c;
+            color: white;
+        }
+
+        .message.assistant .message-avatar {
+            background: #4ec9b0;
+            color: #1e1e1e;
+        }
+
+        .message-content {
+            background: #252526;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #3e3e42;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        .message.user .message-content {
+            background: #0e639c;
+            color: white;
+            border-color: #1177bb;
+        }
+
+        code {
+            background: #1e1e1e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #ce9178;
+        }
+
+        .input-section {
+            background: #252526;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #3e3e42;
+        }
+
+        .input-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .input-container textarea {
+            flex: 1;
+            padding: 0.75rem;
+            background: #3c3c3c;
+            color: #d4d4d4;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: 'Consolas', 'Courier New', monospace;
+            resize: none;
+            min-height: 80px;
+            max-height: 200px;
+        }
+
+        .input-container textarea::placeholder {
+            color: #858585;
+        }
+
+        .input-container button {
+            padding: 0.75rem 1.5rem;
+            background: #0e639c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .input-container button:hover:not(:disabled) {
+            background: #1177bb;
+        }
+
+        .input-container button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ec9b0;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .clear-btn {
+            background: #c72e0d !important;
+            margin-left: auto;
+        }
+
+        .clear-btn:hover {
+            background: #e63c19 !important;
+        }
+
+        .info-box {
+            background: #1a3a52;
+            border: 1px solid #264f78;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .info-box h3 {
+            color: #4ec9b0;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box ul {
+            list-style-position: inside;
+            color: #9cdcfe;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👨‍💻 Code Assistant</h1>
+        <select class="language-select" id="languageHint">
+            <option value="">Linguaggio...</option>
+            <option value="Python">Python</option>
+            <option value="JavaScript">JavaScript</option>
+            <option value="Java">Java</option>
+            <option value="C++">C++</option>
+            <option value="C#">C#</option>
+            <option value="PHP">PHP</option>
+            <option value="Ruby">Ruby</option>
+            <option value="Go">Go</option>
+            <option value="Rust">Rust</option>
+            <option value="SQL">SQL</option>
+        </select>
+        <button class="clear-btn" onclick="clearChat()">Cancella chat</button>
+    </div>
+
+    <div class="api-key-section" id="apiKeySection">
+        <span>🔑 API Key:</span>
+        <input type="password" id="apiKeyInput" placeholder="Inserisci la tua Groq API Key">
+        <button onclick="saveApiKey()">Salva</button>
+        <small style="color: #9cdcfe;">Ottieni la chiave su <a href="https://console.groq.com" target="_blank" style="color: #4ec9b0;">console.groq.com</a></small>
+    </div>
+
+    <div class="quick-actions">
+        <button class="quick-btn" onclick="quickPrompt('Spiega questo codice in dettaglio')">📖 Spiega codice</button>
+        <button class="quick-btn" onclick="quickPrompt('Trova e correggi i bug in questo codice')">🐛 Debug</button>
+        <button class="quick-btn" onclick="quickPrompt('Ottimizza questo codice')">⚡ Ottimizza</button>
+        <button class="quick-btn" onclick="quickPrompt('Aggiungi commenti dettagliati a questo codice')">💬 Commenti</button>
+        <button class="quick-btn" onclick="quickPrompt('Converti questo codice in')">🔄 Converti</button>
+        <button class="quick-btn" onclick="quickPrompt('Quali sono le best practice per')">✨ Best Practices</button>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="info-box">
+            <h3>🚀 Benvenuto nel Code Assistant!</h3>
+            <p style="margin-bottom: 0.5rem;">Posso aiutarti con:</p>
+            <ul>
+                <li>Debug e correzione errori</li>
+                <li>Spiegazioni dettagliate del codice</li>
+                <li>Ottimizzazione e refactoring</li>
+                <li>Best practices e design patterns</li>
+                <li>Conversione tra linguaggi</li>
+                <li>Suggerimenti su algoritmi e strutture dati</li>
+            </ul>
+            <p style="margin-top: 0.5rem; color: #ce9178;">💡 Incolla il tuo codice e dimmi cosa serve!</p>
+        </div>
+    </div>
+
+    <div class="input-section">
+        <div class="input-container">
+            <textarea 
+                id="messageInput" 
+                placeholder="Incolla il tuo codice o fai una domanda...&#10;&#10;Esempio:&#10;def calcola(x, y):&#10;    return x + y&#10;&#10;Spiega cosa fa questa funzione."
+                onkeydown="if(event.key==='Enter' && event.ctrlKey){event.preventDefault();sendMessage();}"
+            ></textarea>
+            <button onclick="sendMessage()" id="sendBtn">Invia<br><small style="font-size: 0.7rem;">(Ctrl+Enter)</small></button>
+        </div>
+    </div>
+
+    <script>
+        let apiKey = '';
+        let conversationHistory = [];
+
+        const SYSTEM_PROMPT = `Sei un assistente di programmazione esperto e paziente. Il tuo compito è:
+
+1. ANALIZZARE il codice con attenzione
+2. SPIEGARE i concetti in modo chiaro e dettagliato
+3. IDENTIFICARE bug e problemi
+4. SUGGERIRE ottimizzazioni e best practices
+5. FORNIRE esempi pratici quando utile
+
+Regole importanti:
+- Sii preciso e tecnico, ma anche comprensibile
+- Quando spieghi, scomponi i concetti complessi in parti semplici
+- Per i bug, indica la riga e spiega perché è un problema
+- Suggerisci sempre alternative quando possibile
+- Usa commenti nel codice per evidenziare i punti chiave
+- Formatta il codice in modo leggibile
+
+Rispondi sempre in italiano, ma mantieni i termini tecnici in inglese quando appropriato.`;
+
+        window.onload = function() {
+            const savedKey = localStorage.getItem('groqApiKey');
+            if (savedKey) {
+                apiKey = savedKey;
+                document.getElementById('apiKeyInput').value = savedKey;
+                document.getElementById('apiKeySection').style.display = 'none';
+            }
+
+            const savedHistory = localStorage.getItem('codeAssistantHistory');
+            if (savedHistory) {
+                conversationHistory = JSON.parse(savedHistory);
+                renderHistory();
+            }
+        };
+
+        function saveApiKey() {
+            const input = document.getElementById('apiKeyInput');
+            apiKey = input.value.trim();
+            
+            if (!apiKey) {
+                alert('Inserisci una API key valida');
+                return;
+            }
+
+            localStorage.setItem('groqApiKey', apiKey);
+            document.getElementById('apiKeySection').style.display = 'none';
+            addMessage('assistant', '✅ API Key salvata! Pronto ad aiutarti con il codice. Incolla il tuo codice o fai una domanda!');
+        }
+
+        function quickPrompt(prompt) {
+            document.getElementById('messageInput').value = prompt + ':\n\n';
+            document.getElementById('messageInput').focus();
+        }
+
+        function addMessage(role, content) {
+            const container = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = role === 'user' ? '👤' : '🤖';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            container.appendChild(messageDiv);
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('chatContainer');
+            const infoBox = container.querySelector('.info-box');
+            container.innerHTML = '';
+            if (infoBox) container.appendChild(infoBox);
+            
+            conversationHistory.forEach(msg => {
+                if (msg.role !== 'system') {
+                    addMessage(msg.role, msg.content);
+                }
+            });
+        }
+
+        async function sendMessage() {
+            if (!apiKey) {
+                alert('Inserisci prima la tua API key');
+                return;
+            }
+
+            const input = document.getElementById('messageInput');
+            let message = input.value.trim();
+            
+            if (!message) return;
+
+            // Aggiungi contesto del linguaggio se selezionato
+            const language = document.getElementById('languageHint').value;
+            if (language) {
+                message = `[Linguaggio: ${language}]\n\n${message}`;
+            }
+
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = 'Invio...';
+
+            addMessage('user', message);
+            
+            // Aggiungi system prompt solo alla prima richiesta
+            if (conversationHistory.length === 0 || conversationHistory[0].role !== 'system') {
+                conversationHistory.unshift({ role: 'system', content: SYSTEM_PROMPT });
+            }
+            
+            conversationHistory.push({ role: 'user', content: message });
+            input.value = '';
+
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant';
+            loadingDiv.id = 'loading';
+            loadingDiv.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <span class="loading"></span>
+                    <span class="loading" style="animation-delay: 0.2s;"></span>
+                    <span class="loading" style="animation-delay: 0.4s;"></span>
+                    Analizzing...
+                </div>
+            `;
+            document.getElementById('chatContainer').appendChild(loadingDiv);
+
+            try {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: conversationHistory,
+                        temperature: 0.3,
+                        max_tokens: 4000
+                    })
+                });
+
+                document.getElementById('loading').remove();
+
+                if (!response.ok) {
+                    throw new Error(`Errore API: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const assistantMessage = data.choices[0].message.content;
+
+                addMessage('assistant', assistantMessage);
+                conversationHistory.push({ role: 'assistant', content: assistantMessage });
+
+                localStorage.setItem('codeAssistantHistory', JSON.stringify(conversationHistory));
+
+            } catch (error) {
+                document.getElementById('loading')?.remove();
+                addMessage('assistant', `❌ Errore: ${error.message}\n\nVerifica la tua API key.`);
+            }
+
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = 'Invia<br><small style="font-size: 0.7rem;">(Ctrl+Enter)</small>';
+        }
+
+        function clearChat() {
+            if (confirm('Vuoi cancellare tutta la cronologia?')) {
+                conversationHistory = [];
+                localStorage.removeItem('codeAssistantHistory');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
